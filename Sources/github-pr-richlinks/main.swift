@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import GitHubPRRichLinks
 
 let usage = """
 usage: github-pr-richlinks [--interval SECONDS] [--verbose]

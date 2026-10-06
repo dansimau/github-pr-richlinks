@@ -5,10 +5,14 @@ LABEL    := com.dansimau.$(NAME)
 AGENT    := $(HOME)/Library/LaunchAgents/$(LABEL).plist
 LOGDIR   := $(HOME)/Library/Logs/$(NAME)
 
-.PHONY: build release install uninstall start stop restart log clean
+.PHONY: build test release install uninstall start stop restart log clean
 
 build:
 	swift build
+
+test:
+	swift test
+
 
 release:
 	swift build -c release

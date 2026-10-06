@@ -37,6 +37,12 @@ swift build
 .build/debug/github-pr-richlinks render https://github.com/cli/cli/pull/1   # print HTML and exit
 ```
 
+## Tests
+
+```sh
+swift test
+```
+
 ## Run at login
 
 ```sh
@@ -54,8 +60,9 @@ the plain-text URL or diff stats) wins the race.
 
 ## Layout
 
-- `Sources/github-pr-richlinks/PRLink.swift` — URL parsing, HTML rendering
-- `Sources/github-pr-richlinks/GitHub.swift` — `gh pr view --json title,additions,deletions`
-- `Sources/github-pr-richlinks/ClipboardWatcher.swift` — pasteboard polling and rewriting
+- `Sources/GitHubPRRichLinks/PRLink.swift` — URL parsing, HTML rendering
+- `Sources/GitHubPRRichLinks/GitHub.swift` — `gh pr view --json title,additions,deletions`
+- `Sources/GitHubPRRichLinks/ClipboardWatcher.swift` — pasteboard polling and rewriting
 - `Sources/github-pr-richlinks/main.swift` — CLI entry point
+- `Tests/GitHubPRRichLinksTests/` — unit tests (`swift test`); the watcher tests use a private named pasteboard, so they never touch your real clipboard
 - `github-pr.sh` — the original Maccy trigger script this replaces

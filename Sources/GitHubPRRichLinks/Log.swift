@@ -1,7 +1,7 @@
 import Foundation
 
-enum Log {
-    nonisolated(unsafe) static var verbose = false
+public enum Log {
+    nonisolated(unsafe) public static var verbose = false
 
     private static let formatter: DateFormatter = {
         let f = DateFormatter()
@@ -9,16 +9,16 @@ enum Log {
         return f
     }()
 
-    static func info(_ message: String) {
+    public static func info(_ message: String) {
         write(message)
     }
 
-    static func debug(_ message: String) {
+    public static func debug(_ message: String) {
         guard verbose else { return }
         write(message)
     }
 
-    static func error(_ message: String) {
+    public static func error(_ message: String) {
         write("error: \(message)")
     }
 

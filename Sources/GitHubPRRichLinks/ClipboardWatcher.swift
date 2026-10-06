@@ -1,46 +1,59 @@
 import AppKit
 import Foundation
 
-/// Polls the general pasteboard and rewrites GitHub PR URLs as rich links.
+/// Polls a pasteboard and rewrites GitHub PR URLs as rich links.
 @MainActor
-final class ClipboardWatcher {
-    private let pasteboard = NSPasteboard.general
+public final class ClipboardWatcher {
+    public typealias Fetcher = @Sendable (PRLink) throws -> PRInfo
+
+    private let pasteboard: NSPasteboard
     private let interval: TimeInterval
+    private let fetch: Fetcher
     private var lastChangeCount: Int
     private var timer: Timer?
 
-    init(interval: TimeInterval) {
+    public init(
+        pasteboard: NSPasteboard = .general,
+        interval: TimeInterval = 0.5,
+        fetch: @escaping Fetcher = { link in try GitHub.fetch(link) }
+    ) {
+        self.pasteboard = pasteboard
         self.interval = interval
+        self.fetch = fetch
         self.lastChangeCount = pasteboard.changeCount
     }
 
-    func start() {
+    public func start() {
         Log.info("watching clipboard every \(Int(interval * 1000))ms")
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.tick() }
+            MainActor.assumeIsolated { _ = self?.tick() }
         }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
-    private func tick() {
+    /// Checks the pasteboard once. If a new PR URL is present, returns the task that
+    /// fetches its details and rewrites the pasteboard; otherwise returns nil.
+    @discardableResult
+    public func tick() -> Task<Void, Never>? {
         let changeCount = pasteboard.changeCount
-        guard changeCount != lastChangeCount else { return }
+        guard changeCount != lastChangeCount else { return nil }
         lastChangeCount = changeCount
 
         guard let text = pasteboard.string(forType: .string) else {
             Log.debug("clipboard changed (#\(changeCount)) but has no plain text")
-            return
+            return nil
         }
         guard let link = PRLink.parse(text) else {
             Log.debug("clipboard changed (#\(changeCount)), not a PR URL")
-            return
+            return nil
         }
 
         Log.info("PR URL copied: \(link.originalURL)")
-        Task.detached(priority: .userInitiated) {
+        let fetch = self.fetch
+        return Task.detached(priority: .userInitiated) {
             do {
-                let info = try GitHub.fetch(link)
+                let info = try fetch(link)
                 await MainActor.run { self.write(link: link, info: info, expectedChangeCount: changeCount) }
             } catch {
                 Log.error("\(link.canonicalURL): \(error)")
