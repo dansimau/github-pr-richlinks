@@ -1,5 +1,7 @@
 # github-pr-richlinks
 
+[![Coded with Claude Code](https://vibecoded.fyi/badges/flat/agents/claude-code.svg)](https://vibecoded.fyi/)
+
 A small macOS daemon that watches the clipboard for GitHub pull request URLs
 and rewrites them as rich links. Copy
 
@@ -15,10 +17,6 @@ and the clipboard becomes:
 Rich-text destinations (Slack, Notes, Google Docs, Mail) paste the titled link
 with the diff stats; plain-text destinations (terminals, editors, URL bars)
 still get the raw URL.
-
-Anything after the PR number (`/files`, `#discussion_r…`) is preserved in the
-link. Non-PR clipboard contents are never touched, and if the clipboard changes
-while the title is being fetched, the fetch result is discarded.
 
 ## Requirements
 
@@ -57,12 +55,3 @@ Set `PREFIX` to install elsewhere, e.g. `make install PREFIX=/usr/local`.
 If you previously used the Maccy trigger from `github-pr.sh`, disable it
 first; otherwise both will rewrite the clipboard and Maccy's version (without
 the plain-text URL or diff stats) wins the race.
-
-## Layout
-
-- `Sources/GitHubPRRichLinks/PRLink.swift` — URL parsing, HTML rendering
-- `Sources/GitHubPRRichLinks/GitHub.swift` — `gh pr view --json title,additions,deletions`
-- `Sources/GitHubPRRichLinks/ClipboardWatcher.swift` — pasteboard polling and rewriting
-- `Sources/github-pr-richlinks/main.swift` — CLI entry point
-- `Tests/GitHubPRRichLinksTests/` — unit tests (`swift test`); the watcher tests use a private named pasteboard, so they never touch your real clipboard
-- `github-pr.sh` — the original Maccy trigger script this replaces
