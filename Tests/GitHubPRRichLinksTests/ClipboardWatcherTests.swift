@@ -136,4 +136,119 @@ struct ClipboardWatcherTests {
         #expect(pasteboard.string(forType: .string) == "https://github.com/a/b/pull/2")
         pasteboard.releaseGlobally()
     }
+
+    @Test func copyingSameLinkTwiceLeavesPlainText() async throws {
+        var calls = 0
+        let watcher = makeWatcher { [info] _ in
+            calls += 1
+            return info
+        }
+        copy(url)
+        await watcher.tick()?.value
+        #expect(pasteboard.string(forType: .html) != nil)
+
+        // Copying the same URL again is a request for the raw URL.
+        copy(url)
+        #expect(watcher.tick() == nil)
+        #expect(calls == 1)
+        #expect(pasteboard.string(forType: .string) == url)
+        #expect(pasteboard.string(forType: .html) == nil)
+        pasteboard.releaseGlobally()
+    }
+
+    @Test func copyingSameLinkThirdTimeRewritesAgain() async throws {
+        var calls = 0
+        let watcher = makeWatcher { [info] _ in
+            calls += 1
+            return info
+        }
+        copy(url)
+        await watcher.tick()?.value
+        copy(url)
+        #expect(watcher.tick() == nil)
+
+        copy(url)
+        await watcher.tick()?.value
+        #expect(calls == 2)
+        #expect(pasteboard.string(forType: .html) != nil)
+        pasteboard.releaseGlobally()
+    }
+
+    @Test func doubleCopyDuringFetchLeavesPlainText() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        var calls = 0
+        let watcher = makeWatcher { [info] _ in
+            calls += 1
+            gate.wait()
+            return info
+        }
+        copy(url)
+        let task = try #require(watcher.tick())
+
+        // A quick second Cmd+C lands before gh has returned.
+        copy(url)
+        #expect(watcher.tick() == nil)
+        gate.signal()
+        await task.value
+
+        #expect(calls == 1)
+        #expect(pasteboard.string(forType: .string) == url)
+        #expect(pasteboard.string(forType: .html) == nil)
+        pasteboard.releaseGlobally()
+    }
+
+    @Test func copyingLinkAfterSomethingElseRewritesAgain() async throws {
+        var calls = 0
+        let watcher = makeWatcher { [info] _ in
+            calls += 1
+            return info
+        }
+        copy(url)
+        await watcher.tick()?.value
+        copy("unrelated")
+        #expect(watcher.tick() == nil)
+
+        // Not "in succession" any more, so the link is rewritten as usual.
+        copy(url)
+        await watcher.tick()?.value
+        #expect(calls == 2)
+        #expect(pasteboard.string(forType: .html) != nil)
+        pasteboard.releaseGlobally()
+    }
+
+    @Test func copyingDifferentFormOfSameLinkRewrites() async throws {
+        var calls = 0
+        let watcher = makeWatcher { [info] _ in
+            calls += 1
+            return info
+        }
+        copy(url)
+        await watcher.tick()?.value
+
+        // Same PR, different URL (no /files suffix): treated as a new link.
+        copy("https://github.com/a/b/pull/77")
+        await watcher.tick()?.value
+        #expect(calls == 2)
+        #expect(pasteboard.string(forType: .html)?.contains(#"href="https://github.com/a/b/pull/77""#) == true)
+        pasteboard.releaseGlobally()
+    }
+
+    @Test func recopyingAfterFailedFetchRetries() async throws {
+        var calls = 0
+        let watcher = makeWatcher { [info] _ in
+            calls += 1
+            if calls == 1 { throw GitHubError.commandFailed(status: 1, stderr: "nope") }
+            return info
+        }
+        copy(url)
+        await watcher.tick()?.value
+        #expect(pasteboard.string(forType: .html) == nil)
+
+        // Nothing was rewritten, so the second copy is a retry, not a plain-text request.
+        copy(url)
+        await watcher.tick()?.value
+        #expect(calls == 2)
+        #expect(pasteboard.string(forType: .html) != nil)
+        pasteboard.releaseGlobally()
+    }
 }

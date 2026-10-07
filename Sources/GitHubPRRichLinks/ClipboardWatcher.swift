@@ -2,6 +2,10 @@ import AppKit
 import Foundation
 
 /// Polls a pasteboard and rewrites GitHub PR URLs as rich links.
+///
+/// Copying the same PR URL twice in a row leaves the second copy as plain text, so the
+/// raw URL can be forced into rich-text destinations. Copying it a third time rewrites
+/// it again.
 @MainActor
 public final class ClipboardWatcher {
     public typealias Fetcher = @Sendable (PRLink) throws -> PRInfo
@@ -10,6 +14,9 @@ public final class ClipboardWatcher {
     private let interval: TimeInterval
     private let fetch: Fetcher
     private var lastChangeCount: Int
+    /// The link most recently rewritten (or being rewritten), cleared by any other clipboard
+    /// change. A fresh copy of this exact URL is treated as a request for the plain-text version.
+    private var lastRewrittenLink: PRLink?
     private var timer: Timer?
 
     public init(
@@ -39,6 +46,9 @@ public final class ClipboardWatcher {
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return nil }
         lastChangeCount = changeCount
+        // Only a copy immediately following a rewrite counts as "the same link twice".
+        let previousLink = lastRewrittenLink
+        lastRewrittenLink = nil
 
         guard let text = pasteboard.string(forType: .string) else {
             Log.debug("clipboard changed (#\(changeCount)) but has no plain text")
@@ -49,7 +59,13 @@ public final class ClipboardWatcher {
             return nil
         }
 
+        if link == previousLink {
+            Log.info("PR URL copied again: \(link.originalURL); leaving it as plain text")
+            return nil
+        }
+
         Log.info("PR URL copied: \(link.originalURL)")
+        lastRewrittenLink = link
         let fetch = self.fetch
         return Task.detached(priority: .userInitiated) {
             do {
@@ -57,8 +73,15 @@ public final class ClipboardWatcher {
                 await MainActor.run { self.write(link: link, info: info, expectedChangeCount: changeCount) }
             } catch {
                 Log.error("\(link.canonicalURL): \(error)")
+                // Nothing was rewritten, so copying the URL again should retry rather than
+                // be read as a request for plain text.
+                await MainActor.run { self.forget(link) }
             }
         }
+    }
+
+    private func forget(_ link: PRLink) {
+        if lastRewrittenLink == link { lastRewrittenLink = nil }
     }
 
     private func write(link: PRLink, info: PRInfo, expectedChangeCount: Int) {

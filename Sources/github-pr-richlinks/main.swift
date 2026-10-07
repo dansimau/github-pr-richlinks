@@ -10,7 +10,8 @@ usage: github-pr-richlinks [--interval SECONDS] [--verbose]
 Watches the clipboard for GitHub pull request URLs. When one is copied, the
 clipboard is rewritten so that rich-text contexts get
   :pull-request: <a href="URL">Title [+added -removed]</a>
-while plain-text contexts still get the raw URL.
+while plain-text contexts still get the raw URL. Copy the same URL twice in a
+row to keep the second copy as plain text; a third copy rewrites it again.
 
 Options:
   --interval SECONDS  Poll interval (default 0.5)

@@ -18,6 +18,10 @@ Rich-text destinations (Slack, Notes, Google Docs, Mail) paste the titled link
 with the diff stats; plain-text destinations (terminals, editors, URL bars)
 still get the raw URL.
 
+To paste the raw URL into a rich-text destination, copy the same URL twice in
+a row. The second copy is left as plain text. Copying it a third time turns it
+back into a rich link, and copying anything else in between resets the count.
+
 ## Requirements
 
 - macOS 13+
