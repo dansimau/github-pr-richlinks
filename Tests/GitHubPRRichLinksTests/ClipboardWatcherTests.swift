@@ -60,7 +60,7 @@ struct ClipboardWatcherTests {
         await task.value
 
         #expect(pasteboard.string(forType: .html)
-            == #":pull-request: <a href="https://github.com/a/b/pull/77/files">Make it work [+5 -2]</a>"#)
+            == #":pull-request: (b) <a href="https://github.com/a/b/pull/77/files">Make it work [+5 -2]</a>"#)
         #expect(pasteboard.string(forType: .string) == url)
 
         // Both representations live on one item so apps pick whichever they prefer.
