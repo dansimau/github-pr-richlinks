@@ -69,16 +69,16 @@ struct RichLinkTests {
         #expect(RichLink.label(for: info) == "Drop the SHA1 row id [+52 -20]")
     }
 
-    @Test func htmlWrapsLabelInAnchorWithEmojiPrefix() {
+    @Test func htmlWrapsLabelInAnchorWithEmojiAndRepoPrefix() {
         let info = PRInfo(title: "Fix thing", additions: 1, deletions: 0)
         #expect(RichLink.html(for: link, info: info)
-            == #":pull-request: <a href="https://github.com/a/b/pull/5">Fix thing [+1 -0]</a>"#)
+            == #":pull-request: (b) <a href="https://github.com/a/b/pull/5">Fix thing [+1 -0]</a>"#)
     }
 
     @Test func htmlEscapesTitle() {
         let info = PRInfo(title: #"Use <T> & "quotes" > 3"#, additions: 0, deletions: 0)
         #expect(RichLink.html(for: link, info: info)
-            == #":pull-request: <a href="https://github.com/a/b/pull/5">Use &lt;T&gt; &amp; &quot;quotes&quot; &gt; 3 [+0 -0]</a>"#)
+            == #":pull-request: (b) <a href="https://github.com/a/b/pull/5">Use &lt;T&gt; &amp; &quot;quotes&quot; &gt; 3 [+0 -0]</a>"#)
     }
 
     @Test func htmlEscapesURL() {

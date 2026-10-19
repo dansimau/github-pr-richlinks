@@ -11,7 +11,7 @@ and the clipboard becomes:
 
 | Pasteboard type        | Content                                                                      |
 | ---------------------- | ---------------------------------------------------------------------------- |
-| `public.html`          | `:pull-request: <a href="https://github.com/org/repo/pull/123">Title [+52 -20]</a>` |
+| `public.html`          | `:pull-request: (repo) <a href="https://github.com/org/repo/pull/123">Title [+52 -20]</a>` |
 | `public.utf8-plain-text` | `https://github.com/org/repo/pull/123`                                     |
 
 Rich-text destinations (Slack, Notes, Google Docs, Mail) paste the titled link

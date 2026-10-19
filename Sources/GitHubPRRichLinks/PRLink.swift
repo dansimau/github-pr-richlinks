@@ -52,7 +52,7 @@ public enum RichLink {
 
     /// HTML fragment placed on the pasteboard as `public.html`.
     public static func html(for link: PRLink, info: PRInfo) -> String {
-        ":pull-request: <a href=\"\(escape(link.originalURL))\">\(escape(label(for: info)))</a>"
+        ":pull-request: (\(escape(link.repo))) <a href=\"\(escape(link.originalURL))\">\(escape(label(for: info)))</a>"
     }
 
     public static func escape(_ s: String) -> String {
