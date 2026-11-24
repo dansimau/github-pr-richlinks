@@ -55,6 +55,11 @@ public enum RichLink {
         ":pull-request: (\(escape(link.repo))) <a href=\"\(escape(link.originalURL))\">\(escape(label(for: info)))</a>"
     }
 
+    /// HTML fragment for a Claude artifact link.
+    public static func html(for link: ArtifactLink, title: String) -> String {
+        ":claude: <a href=\"\(escape(link.originalURL))\">\(escape(title))</a>"
+    }
+
     public static func escape(_ s: String) -> String {
         s.replacingOccurrences(of: "&", with: "&amp;")
          .replacingOccurrences(of: "<", with: "&lt;")
