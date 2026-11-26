@@ -7,15 +7,17 @@ usage: github-pr-richlinks [--interval SECONDS] [--verbose]
        github-pr-richlinks render URL
        github-pr-richlinks --help
 
-Watches the clipboard for GitHub pull request URLs. When one is copied, the
-clipboard is rewritten so that rich-text contexts get
+Watches the clipboard for GitHub pull request and Claude artifact URLs. When
+one is copied, the clipboard is rewritten so that rich-text contexts get
   :pull-request: (repo) <a href="URL">Title [+added -removed]</a>
-while plain-text contexts still get the raw URL.
+  :claude: <a href="URL">Artifact title</a>
+while plain-text contexts still get the raw URL. Artifact titles are read from
+the Google Chrome tab that has the artifact open.
 
 Options:
   --interval SECONDS  Poll interval (default 0.5)
-  --verbose, -v       Log every clipboard change, not just PR URLs
-  render URL          Fetch the PR and print the HTML fragment, then exit
+  --verbose, -v       Log every clipboard change, not just recognised URLs
+  render URL          Look up the PR or artifact and print the HTML fragment, then exit
 """
 
 func fail(_ message: String) -> Never {
@@ -49,10 +51,14 @@ while !args.isEmpty {
 }
 
 if let renderURL {
-    guard let link = PRLink.parse(renderURL) else { fail("not a GitHub PR URL: \(renderURL)") }
     do {
-        let info = try GitHub.fetch(link)
-        print(RichLink.html(for: link, info: info))
+        if let link = PRLink.parse(renderURL) {
+            print(RichLink.html(for: link, info: try GitHub.fetch(link)))
+        } else if let link = ArtifactLink.parse(renderURL) {
+            print(RichLink.html(for: link, title: try ChromeTabs.title(for: link)))
+        } else {
+            fail("not a GitHub PR or Claude artifact URL: \(renderURL)")
+        }
         exit(0)
     } catch {
         fail("\(error)")
